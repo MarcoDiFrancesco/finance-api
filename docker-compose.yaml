@@ -1,0 +1,11 @@
+services:
+  finance-api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: finance-api
+    ports:
+      - 54246:54246
+    volumes:
+      - ./db/:/db/
+    restart: unless-stopped
