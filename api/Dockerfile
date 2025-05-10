@@ -10,4 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
-CMD ["fastapi", "run", "app.py", "--port", "54246"]
+# CMD ["fastapi", "run", "app.py", "--port", "54246"]
+CMD ["fastapi", "dev", "app.py", "--host", "0.0.0.0", "--port", "54246"]

@@ -8,4 +8,7 @@ services:
       - 54246:54246
     volumes:
       - ./db/:/db/
+      - ./api/:/app/:ro # Used for hot-reloading in 'fastapi dev'
     restart: unless-stopped
+    user: 1000:1000
+  
