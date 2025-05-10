@@ -2,13 +2,49 @@ from fastapi import FastAPI, HTTPException
 import yfinance as yf
 import datetime
 import pandas as pd
+import sqlite3
+import os
 
 app = FastAPI(
     title="Finance API",
     description="API for retrieving financial data from Yahoo Finance",
     root_path="/api",
 )
-csv_price = "/db/price.csv"
+
+# SQLite database configuration
+DB_PATH = "/db/finance.db"
+
+
+# Initialize database if it doesn't exist
+def init_db():
+    """Initialize SQLite database with required tables if they don't exist"""
+    if not os.path.exists(os.path.dirname(DB_PATH)):
+        os.makedirs(os.path.dirname(DB_PATH))
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+    CREATE TABLE IF NOT EXISTS prices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        symbol TEXT NOT NULL,
+        date TEXT NOT NULL,
+        open REAL,
+        close REAL, 
+        high REAL,
+        low REAL,
+        volume REAL,
+        average REAL,
+        UNIQUE(symbol, date)
+    )
+    """
+    )
+    conn.commit()
+    conn.close()
+
+
+# Initialize the database on startup
+init_db()
 
 
 @app.get("/")
@@ -36,12 +72,19 @@ def get_amount(symbol: str, date: str):
     if not date or len(date) != 7 or date[4] != "-":
         raise_exception("Date must be in 'YYYY-MM' format")
 
-    df = pd.read_csv(csv_price)
-    # Yahoo Finance marks
-    df = df[(df["date"] == date) & (df["symbol"] == symbol)]
-    if df.empty:
+    # Query the database for the price
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT average FROM prices WHERE symbol = ? AND date = ?", (symbol, date)
+    )
+    result = cursor.fetchone()
+    conn.close()
+
+    if not result:
         raise_exception(f"No data found for symbol '{symbol}' on date '{date}'")
-    return df.iloc[0]["average"]
+
+    return result[0]
 
 
 @app.get("/update/{symbol}/", summary="Update stock price data")
@@ -57,8 +100,11 @@ def update(symbol: str):
         yf.Ticker(symbol).info
     except Exception as e:
         raise_exception(f"Invalid Yahoo Finance symbol '{symbol}'")
-    start_date = "2025-01-01"
+
+    start_date = "2020-01-01"
     end_date = get_last_month_day()
+
+    # Fetch data from Yahoo Finance
     df = yf.download(symbol, start=start_date, end=end_date, interval="1mo")
     df = df.reset_index()
     df.columns = ["date", "close", "high", "low", "open", "volume"]
@@ -67,7 +113,34 @@ def update(symbol: str):
     df["average"] = df[["close", "open"]].mean(axis=1)
     # Convert date to YYYY-MM format
     df["date"] = df["date"].dt.strftime("%Y-%m")
-    df.to_csv(csv_price)
+
+    # Store data in SQLite database
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Insert data into the database (replace if already exists)
+    for _, row in df.iterrows():
+        cursor.execute(
+            """
+            INSERT OR REPLACE INTO prices 
+            (symbol, date, open, close, high, low, volume, average) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                row["symbol"],
+                row["date"],
+                row["open"],
+                row["close"],
+                row["high"],
+                row["low"],
+                row["volume"],
+                row["average"],
+            ),
+        )
+
+    conn.commit()
+    conn.close()
+
     return {
         "message": f"Prices of '{symbol}' updated successfully from '{start_date}' to '{end_date}'"
     }

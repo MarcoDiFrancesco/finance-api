@@ -10,5 +10,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
-# CMD ["fastapi", "run", "app.py", "--port", "54246"]
+# When using dev mode set docker-compose volume of ./api/:/app/
 CMD ["fastapi", "dev", "app.py", "--host", "0.0.0.0", "--port", "54246"]
+# CMD ["fastapi", "run", "app.py", "--port", "54246"]
