@@ -1,5 +1,7 @@
 # TODO: test on python:3.13-slim once it works stable
 FROM python:3.13
+
+# Not working on root to enable hot-reloading
 WORKDIR /app
 
 # RUN apt-get update && apt-get install ...

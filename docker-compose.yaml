@@ -1,14 +1,16 @@
 services:
   finance-api:
     build:
-      context: ./api
+      context: .
       dockerfile: Dockerfile
     container_name: finance-api
     ports:
       - 54246:54246
     volumes:
-      - ./db/:/db/
-      - ./api/:/app/:ro # Used for hot-reloading in 'fastapi dev'
+      - ./db/:/app/db/
+      - ./router/:/app/router/:ro
+      - ./utils/:/app/utils/:ro
+      - ./app.py:/app/app.py:ro
     restart: unless-stopped
     user: 1000:1000
   
