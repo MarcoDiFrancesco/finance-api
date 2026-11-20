@@ -7,7 +7,6 @@ import pandas as pd
 from utils import query
 
 router = APIRouter()
-db_conn = DBConn()
 
 
 class Payload(BaseModel):
@@ -22,15 +21,13 @@ class Payload(BaseModel):
 @router.post("/yearly-market-percentage-return")
 def yearly_market_percentage_return(payload: Payload):
     """
-    Calculates the market yield of a portfolio of a given year for a given currency.
+    Return the market yield of a portfolio of a given year.
 
-    'In 2025 when I was 24 the market flourished and I gained 18%'
-
-    Details:
-    - Asset price of *current* year
-    - Currency exchange of *current* year
+    Implementation:
+    - Price difference calculated between closing price of previous year and current year.
+      For example, 2025 -> difference between 2025-12-31 and 2024-12-31.
     """
-    # Load the incoming data into a pandas DataFrame for easier processing
+    db_conn = DBConn()
     try:
         df_purchases = pd.DataFrame(
             {
@@ -46,7 +43,7 @@ def yearly_market_percentage_return(payload: Payload):
     prev_year = payload.year - 1
     curr_year = payload.year
     # Previous year closing price
-    asset_date = f"{prev_year}-12"
+    asset_date = f"{curr_year}-12"
 
     # Filter for transactions made before the beginning of last year
     df_filtered = df_purchases[df_purchases["date"] <= asset_date].copy()
@@ -93,4 +90,3 @@ def yearly_market_percentage_return(payload: Payload):
     # Total yield percentage, e.g. 18% as weighted average for VWCE and AYEM
     tot_yield_perc = tot_yield / tot_alloc_price if tot_alloc_price != 0 else 0
     return tot_yield_perc
-    

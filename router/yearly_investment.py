@@ -7,59 +7,49 @@ import pandas as pd
 from utils import query
 
 router = APIRouter()
-db_conn = DBConn()
 
 
 class Payload(BaseModel):
     year: int
     dates: List[str]  # 'YYYY-MM' format
-    symbols: List[str]
     amounts: List[float]
+    prices: List[float]
     currencies: List[str]
     target_currency: str
 
 
-@router.post("/portfolio-current-value")
-def portfolio_current_value(payload: Payload):
+@router.post("/yearly-investment")
+def yearly_investment(payload: Payload):
     """
-    Calculates the total value of a portfolio at the beginning of a given year for a given currency.
+    Return amount paid for assets in a given year.
 
-    'In 2025 when I turned 24 I had already invested 5k'
-
-    Details:
-    - Asset price of previous year
-    - Currency exchange of previous year
+    For example: 2025 -> Sum paid for asset costs of purchases between 01-2025 - 12-2025.
     """
-    # Load the incoming data into a pandas DataFrame for easier processing
+    db_conn = DBConn()
     try:
         df_purchases = pd.DataFrame(
             {
                 "date": payload.dates,
-                "symbol": payload.symbols,
                 "amount": payload.amounts,
+                "price": payload.prices,
                 "currency": payload.currencies,
             }
         )
     except ValueError:
         raise_exception("Input columns must have the same length.")
 
-    # Previous year closing price
-    target_year = payload.year - 1
-    target_date = f"{target_year}-12"
-
-    # Filter for transactions made before the beginning of last year
-    df_filtered = df_purchases[df_purchases["date"] <= target_date].copy()
-
-    # Aggregate total amount for each symbol
-    portfolio = (
-        df_filtered.groupby(["symbol", "currency"])["amount"].sum().reset_index()
-    )
+    # Filter for transactions made before the start of the target year
+    start_of_year = f"{payload.year}-01"
+    end_of_year = f"{payload.year}-12"
+    portfolio = df_purchases[
+        (df_purchases["date"] >= start_of_year) & (df_purchases["date"] <= end_of_year)
+    ].copy()
 
     total_portfolio_value = 0.0
 
     for asset in portfolio.itertuples(index=False):
-        price = query.close_value(db_conn, asset.symbol, target_year)
-
+        price = asset.price
+        
         # Apply currency conversion
         exch_rate = 1
         if asset.currency != payload.target_currency:
@@ -67,7 +57,9 @@ def portfolio_current_value(payload: Payload):
             target = payload.target_currency
             # Yahoo Finance's naming convention for forex
             forex_symbol = f"{source}{target}=X"
-            exch_rate = query.close_value(db_conn, forex_symbol, target_year)
+            # End of current year, or latest month available
+            year = payload.year
+            exch_rate = query.close_value(db_conn, forex_symbol, year)
 
         total_portfolio_value += asset.amount * price * exch_rate
 

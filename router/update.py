@@ -13,11 +13,22 @@ API_SYMBOLS = [
     "VWCE.DE",  # Vanguard FTSE All-world
     "AYEM.DE",  # Vanguard EM
     "CSPX.AS",  # S&P 500
+    "SXR8.DE",  # S&P 500
     "SGLD.MI",  # Gold
     "CHDVD.SW",  # iShares Swiss Dividend
     "ANAU.MI",  # NASDAQ 100
-    "CHFEUR=X",  # CHF-EUR
-    "EURCHF=X",  # EUR-CHF
+    "VAPX.SW", # FTSE Developed Asia Pacific ex Japan
+    "H50E.SW", # EURO STOXX 50
+    "EIMI.SW", # MSCI EM IMI
+    # EUR
+    "EURCHF=X",
+    "EURUSD=X",
+    # CHF
+    "CHFEUR=X",
+    "CHFUSD=X",
+    # USD
+    "USDEUR=X",
+    "USDCHF=X",
 ]
 
 

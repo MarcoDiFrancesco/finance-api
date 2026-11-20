@@ -5,12 +5,9 @@ services:
       dockerfile: Dockerfile
     container_name: finance-api
     ports:
-      - 54246:54246
+      - "54246:54246"
     volumes:
       - ./db/:/app/db/
-      - ./router/:/app/router/:ro
-      - ./utils/:/app/utils/:ro
-      - ./app.py:/app/app.py:ro
+    user: "1000:1000"
+    command: ["fastapi", "run", "app.py", "--port", "54246"]
     restart: unless-stopped
-    user: 1000:1000
-  

@@ -1,0 +1,9 @@
+services:
+  finance-api:
+    volumes:
+      # DB mount is inherited from the base file
+      # Mount source code for development
+      - ./app.py:/app/app.py:ro
+      - ./router/:/app/router/:ro
+      - ./utils/:/app/utils/:ro
+    command: ["fastapi", "dev", "app.py", "--port", "54246", "--host", "0.0.0.0"]

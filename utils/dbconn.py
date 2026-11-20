@@ -32,7 +32,6 @@ class DBConn:
         return self.db_conn
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # Multi-treading throws error if a connection was closed by another thread
-        # IF removed since I added above check_same_thread. TODO: check if in the future throws still errors.
-        # if self.db_conn:
-        self.db_conn.close()
+        # Multi-treading throws error if a connection was closed by another thread, even with check_same_thread=False above
+        if self.db_conn:
+            self.db_conn.close()

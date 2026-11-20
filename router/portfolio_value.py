@@ -7,60 +7,62 @@ import pandas as pd
 from utils import query
 
 router = APIRouter()
-db_conn = DBConn()
 
 
 class Payload(BaseModel):
     year: int
     dates: List[str]  # 'YYYY-MM' format
+    symbols: List[str]
     amounts: List[float]
-    prices: List[float]
     currencies: List[str]
     target_currency: str
 
 
-@router.post("/yearly-invested")
-def yearly_invested(payload: Payload):
+@router.post("/portfolio-value")
+def portfolio_value(payload: Payload):
     """
-    Calculates the value of assets invested on a given year for a given currency.
-
-    Details:
-    - Currency exchange of current year
+    Return value of the portfolio at the end of a given year (2025) using
+    closing prices (31-12-2025).
     """
-    # Load the incoming data into a pandas DataFrame for easier processing
+    db_conn = DBConn()
     try:
         df_purchases = pd.DataFrame(
             {
                 "date": payload.dates,
+                "symbol": payload.symbols,
                 "amount": payload.amounts,
-                "price": payload.prices,
                 "currency": payload.currencies,
             }
         )
     except ValueError:
         raise_exception("Input columns must have the same length.")
 
-    # Filter for transactions made before the start of the target year
-    start_of_year = f"{payload.year}-01"
-    end_of_year = f"{payload.year}-12"
-    portfolio = df_purchases[
-        (df_purchases["date"] >= start_of_year) & (df_purchases["date"] <= end_of_year)
-    ].copy()
+    # Year closing price
+    target_year = payload.year
+    target_date = f"{target_year}-12"
+
+    # Get transactions made this year or earlier (31-12-2025)
+    df_filtered = df_purchases[df_purchases["date"] <= target_date].copy()
+
+    # Aggregate total amount for each symbol
+    portfolio = (
+        df_filtered.groupby(["symbol", "currency"])["amount"].sum().reset_index()
+    )
 
     total_portfolio_value = 0.0
 
     for asset in portfolio.itertuples(index=False):
+        price = query.close_value(db_conn, asset.symbol, target_year)
+
         # Apply currency conversion
         exch_rate = 1
         if asset.currency != payload.target_currency:
             source = asset.currency
             target = payload.target_currency
             # Yahoo Finance's naming convention for forex
-            symbol = f"{source}{target}=X"
-            # End of current year, or latest month available
-            year = payload.year
-            exch_rate = query.close_value(db_conn, symbol, year)
+            forex_symbol = f"{source}{target}=X"
+            exch_rate = query.close_value(db_conn, forex_symbol, target_year)
 
-        total_portfolio_value += asset.amount * asset.price * exch_rate
+        total_portfolio_value += asset.amount * price * exch_rate
 
     return total_portfolio_value
