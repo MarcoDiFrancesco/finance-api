@@ -1,6 +1,7 @@
+import os
 import sqlite3
 
-DB_PATH = "db/finance.db"
+DB_PATH = os.environ.get("YFINANCE_DB_PATH", "/app/data/investments/yfinance.db")
 
 
 class DBConn:

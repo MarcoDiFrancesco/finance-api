@@ -1,13 +1,13 @@
 ![assets/swagger-example.png](assets/swagger-example.png)
 
-https://finance.marcodifrancesco.com/api/docs/
+https://api.marcodifrancesco.com/api/docs
 
 ## Kubernetes Build & Deploy
 
 ```bash
-docker build -t localhost:5000/finance-api:latest .
-docker push localhost:5000/finance-api:latest
-kubectl rollout restart deployment/finance-api -n finance
+docker build -t localhost:30500/api:latest .
+docker push localhost:30500/api:latest
+kubectl rollout restart deployment/api -n api
 ```
 
 ## Production

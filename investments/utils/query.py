@@ -1,4 +1,4 @@
-from utils.raise_exception import raise_exception
+from investments.utils.raise_exception import raise_exception
 
 
 def close_value(db_conn, symbol, year):

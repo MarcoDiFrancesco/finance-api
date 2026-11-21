@@ -1,9 +1,13 @@
+# docker-compose.dev.yaml is an overlay file overriding volumes and command
+
 services:
-  finance-api:
+  api:
+    environment:
+      CASHEW_UPLOAD_TOKEN: "dev-token"
     volumes:
-      # DB mount is inherited from the base file
+      # Data mounts are inherited from the base file
       # Mount source code for development
       - ./app.py:/app/app.py:ro
-      - ./router/:/app/router/:ro
-      - ./utils/:/app/utils/:ro
+      - ./investments/:/app/investments/:ro
+      - ./accounting/:/app/accounting/:ro
     command: ["fastapi", "dev", "app.py", "--port", "54246", "--host", "0.0.0.0"]

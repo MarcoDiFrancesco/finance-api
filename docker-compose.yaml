@@ -1,13 +1,14 @@
 services:
-  finance-api:
+  api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: finance-api
+    container_name: api
     ports:
       - "54246:54246"
     volumes:
-      - ./db/:/app/db/
+      - ./data/investments/:/app/data/investments/
+      - ./data/accounting/:/app/data/accounting/
     user: "1000:1000"
     command: ["fastapi", "run", "app.py", "--port", "54246"]
     restart: unless-stopped
